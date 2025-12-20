@@ -69,7 +69,7 @@ More application scenarios, such as product crowdfunding, are yet to be explored
 
 # Team info
 
-Solo team: shaoguoji (Jim/International Bro) —— a new bee in ETHChiangMai Bootcamp.
+Solo team: shaoguoji (Jim/国际哥) —— a new bee in ETHChiangMai Bootcamp.
 
 # Tech details
 
@@ -89,6 +89,13 @@ Adopting a Frontend + Contract architecture.
 *   **User Dashboard**: Requires connecting a user wallet (MetaMask). Displays pools created by the current user, pools joined, transaction records, etc. For Creators, it should provide pool management functions such as adding members, modifying transaction rules, and executing rules. For Organizers, it should provide the ability to add pending reimbursement items.
 *   **Rule Page**: All rules have their own details page. For payment-type rules, an interface is provided for users to perform payment operations (e.g., payment info, amount). After payment, the smart contract checks for success and stores the transaction record on-chain, publicly displaying the payer list and payment transaction record list. Allocation happens subsequently. If an Organizer initiates a reimbursement, a reimbursement rule is automatically generated, recording the reimburser's address and amount.
 *   **Transaction Records**: Display related transaction records on the details pages of pools and rules.
+
+![main](Img/main.png)
+
+![pool](Img/Pool.png)
+
+![payment](Img/payment.png)
+
 
 # Github link
 

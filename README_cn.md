@@ -83,6 +83,12 @@ pools：展示当前链上所有资金池，用户可以点击进入资金池详
 
 交易记录：对于资金池、规则，在其详情页显示与之相关的交易记录。
 
+![main](Img/main.png)
+
+![pool](Img/pool.png)
+
+![payment](Img/payment.png)
+
 # Github link
 
 https://github.com/shaoguoji/AAcount
