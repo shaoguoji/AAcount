@@ -382,6 +382,37 @@ export const PoolDetails: React.FC = () => {
                             ))}
                         </ul>
                     )}
+
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-6 mt-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Participants</h2>
+                        {(() => {
+                            const uniqueParticipants = Array.from(new Set(
+                                (txList as any[])
+                                    .filter((tx: any) => tx.activityType === 0 || tx.activityType === 3) // DEPOSIT or JOIN
+                                    .map((tx: any) => tx.initiator)
+                            ));
+
+                            if (uniqueParticipants.length === 0) {
+                                return <div className="text-gray-500">No participants yet.</div>;
+                            }
+
+                            return (
+                                <ul className="divide-y divide-gray-100">
+                                    {uniqueParticipants.map((part: any, idx) => (
+                                        <li key={idx} className="py-3 flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                                                    <User size={16} />
+                                                </div>
+                                                <span className="text-gray-700 font-mono text-sm">{String(part)}</span>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            );
+                        })()}
+                    </div>
                 </div>
             )}
 
