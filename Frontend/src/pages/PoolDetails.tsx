@@ -10,7 +10,13 @@ import { AAcountPoolABI } from '../contracts';
 export const PoolDetails: React.FC = () => {
     const { address } = useParams<{ address: string }>();
     const { address: userAddress } = useAccount();
-    const [activeTab, setActiveTab] = useState<'overview' | 'actions' | 'members'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'actions' | 'members' | 'rules'>('overview');
+
+    // Rules Form State
+    const [ruleName, setRuleName] = useState('');
+    const [ruleDescription, setRuleDescription] = useState('');
+    const [ruleAmount, setRuleAmount] = useState('');
+    const [ruleType, setRuleType] = useState<0 | 1>(0); // 0: INFLOW, 1: OUTFLOW
 
     // Contract Reads
     const { data: name } = useReadContract({
@@ -50,6 +56,18 @@ export const PoolDetails: React.FC = () => {
         functionName: 'getTransactions',
     });
 
+    const { data: organizers, refetch: refetchOrganizers } = useReadContract({
+        address: address as `0x${string}`,
+        abi: AAcountPoolABI,
+        functionName: 'getOrganizers',
+    });
+
+    const { data: rules, refetch: refetchRules } = useReadContract({
+        address: address as `0x${string}`,
+        abi: AAcountPoolABI,
+        functionName: 'getRules',
+    });
+
     // Actions
     const { data: hash, writeContract, isPending } = useWriteContract();
     const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
@@ -67,8 +85,20 @@ export const PoolDetails: React.FC = () => {
             setRecipient('');
             refetchBalance();
             refetchTx();
+            refetchOrganizers();
+            refetchRules();
         }
-    }, [isSuccess, refetchBalance, refetchTx]);
+    }, [isSuccess, refetchBalance, refetchTx, refetchOrganizers, refetchRules]);
+
+    const handleCreateRule = (e: React.FormEvent) => {
+        e.preventDefault();
+        writeContract({
+            address: address as `0x${string}`,
+            abi: AAcountPoolABI,
+            functionName: 'createRule',
+            args: [ruleName, ruleType, parseEther(ruleAmount || '0'), ruleDescription],
+        });
+    };
 
     const handleAction = (e: React.FormEvent) => {
         e.preventDefault();
@@ -137,6 +167,20 @@ export const PoolDetails: React.FC = () => {
                     Actions
                     {activeTab === 'actions' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
                 </button>
+                <button
+                    onClick={() => setActiveTab('members')}
+                    className={`px-4 py-2 font-medium text-sm transition-colors relative ${activeTab === 'members' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Members
+                    {activeTab === 'members' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
+                </button>
+                <button
+                    onClick={() => setActiveTab('rules')}
+                    className={`px-4 py-2 font-medium text-sm transition-colors relative ${activeTab === 'rules' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Rules
+                    {activeTab === 'rules' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
+                </button>
             </div>
 
             {/* Overview Tab */}
@@ -149,26 +193,57 @@ export const PoolDetails: React.FC = () => {
                         <div className="p-12 text-center text-gray-500">No transactions recorded yet.</div>
                     ) : (
                         <div className="divide-y divide-gray-100">
-                            {[...txList].reverse().map((tx: any) => ( // Show newest first
-                                <div key={String(tx.id)} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${tx.isInflow ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                                            {tx.isInflow ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
-                                        </div>
-                                        <div>
-                                            <div className="font-medium text-gray-900">{tx.description || 'No description'}</div>
-                                            <div className="text-xs text-gray-500 flex items-center gap-1">
-                                                <User size={12} /> {tx.initiator.slice(0, 6)}...{tx.initiator.slice(-4)}
-                                                <span className="mx-1">•</span>
-                                                <Calendar size={12} /> {new Date(Number(tx.timestamp) * 1000).toLocaleString()}
+                            {[...txList].reverse().map((tx: any) => {
+                                const type = Number(tx.activityType); // 0: DEPOSIT, 1: WITHDRAW, 2: ADD_ORGANIZER, 3: JOIN
+
+                                let icon = <ArrowDownLeft size={20} />;
+                                let colorClass = 'bg-gray-100 text-gray-600';
+                                let amountSign = '';
+                                let amountColor = 'text-gray-900';
+
+                                if (type === 0) { // DEPOSIT
+                                    icon = <ArrowDownLeft size={20} />;
+                                    colorClass = 'bg-green-100 text-green-600';
+                                    amountSign = '+';
+                                    amountColor = 'text-green-600';
+                                } else if (type === 1) { // WITHDRAW
+                                    icon = <ArrowUpRight size={20} />;
+                                    colorClass = 'bg-red-100 text-red-600';
+                                    amountSign = '-';
+                                    amountColor = 'text-red-600';
+                                } else if (type === 2) { // ADD_ORGANIZER
+                                    icon = <User size={20} />;
+                                    colorClass = 'bg-purple-100 text-purple-600';
+                                    amountSign = '';
+                                    amountColor = 'text-gray-500';
+                                } else if (type === 3) { // JOIN
+                                    icon = <User size={20} />;
+                                    colorClass = 'bg-blue-100 text-blue-600';
+                                    amountSign = '';
+                                    amountColor = 'text-gray-500';
+                                }
+
+                                return (
+                                    <div key={String(tx.id)} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${colorClass}`}>
+                                                {icon}
+                                            </div>
+                                            <div>
+                                                <div className="font-medium text-gray-900">{tx.description || 'No description'}</div>
+                                                <div className="text-xs text-gray-500 flex items-center gap-1">
+                                                    <User size={12} /> {tx.initiator.slice(0, 6)}...{tx.initiator.slice(-4)}
+                                                    <span className="mx-1">•</span>
+                                                    <Calendar size={12} /> {new Date(Number(tx.timestamp) * 1000).toLocaleString()}
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className={`font-bold ${amountColor}`}>
+                                            {amountSign}{tx.amount > 0n ? formatEther(tx.amount) : '0'} ETH
+                                        </div>
                                     </div>
-                                    <div className={`font-bold ${tx.isInflow ? 'text-green-600' : 'text-red-600'}`}>
-                                        {tx.isInflow ? '+' : '-'}{formatEther(tx.amount)} ETH
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -281,6 +356,155 @@ export const PoolDetails: React.FC = () => {
                             </div>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Members Tab */}
+            {activeTab === 'members' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Organizers</h2>
+                    {(!organizers || (organizers as any[]).length === 0) ? (
+                        <div className="text-gray-500">No organizers found.</div>
+                    ) : (
+                        <ul className="divide-y divide-gray-100">
+                            {(organizers as string[]).map((org) => (
+                                <li key={org} className="py-3 flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-purple-100 p-2 rounded-full text-purple-600">
+                                            <User size={16} />
+                                        </div>
+                                        <span className="text-gray-700 font-mono text-sm">{org}</span>
+                                    </div>
+                                    {org === creator && (
+                                        <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">Creator</span>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
+
+            {/* Rules Tab */}
+            {activeTab === 'rules' && (
+                <div className="space-y-6">
+                    {/* Create Rule Form (Organizers Only) */}
+                    {(isOrganizer || creator === userAddress) && (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <h2 className="text-lg font-semibold mb-4 text-gray-900">Create New Operating Rule</h2>
+                            <form onSubmit={handleCreateRule} className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Rule Name</label>
+                                        <input
+                                            type="text"
+                                            value={ruleName}
+                                            onChange={(e) => setRuleName(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g. Monthly Fee"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Amount (ETH)</label>
+                                        <input
+                                            type="number"
+                                            value={ruleAmount}
+                                            onChange={(e) => setRuleAmount(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="0 for dynamic amount"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Rule Type</label>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="ruleType"
+                                                checked={ruleType === 0}
+                                                onChange={() => setRuleType(0)}
+                                                className="mr-2"
+                                            />
+                                            Inflow (Collection/Deposit)
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="ruleType"
+                                                checked={ruleType === 1}
+                                                onChange={() => setRuleType(1)}
+                                                className="mr-2"
+                                            />
+                                            Outflow (Expense/Refund)
+                                        </label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                    <input
+                                        type="text"
+                                        value={ruleDescription}
+                                        onChange={(e) => setRuleDescription(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Brief description of this rule"
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={isPending || isConfirming}
+                                    className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-black transition disabled:opacity-50"
+                                >
+                                    {isPending ? <Loader2 className="animate-spin" size={20} /> : 'Create Rule'}
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Rules List */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-6 border-b border-gray-100">
+                            <h2 className="text-lg font-semibold text-gray-900">Active Rules</h2>
+                        </div>
+                        {(!rules || (rules as any[]).length === 0) ? (
+                            <div className="p-8 text-center text-gray-500">No rules defined yet.</div>
+                        ) : (
+                            <div className="divide-y divide-gray-100">
+                                {(rules as any[]).map((rule, idx) => (
+                                    <div key={idx} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${rule.ruleType === 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                    {rule.ruleType === 0 ? 'Inflow' : 'Outflow'}
+                                                </span>
+                                                <h3 className="font-bold text-gray-900">{rule.name}</h3>
+                                            </div>
+                                            <p className="text-gray-500 text-sm mb-1">{rule.description}</p>
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {rule.amount > 0n ? `${formatEther(rule.amount)} ETH` : 'Dynamic Amount'}
+                                            </div>
+                                        </div>
+
+                                        {rule.ruleType === 0 && (
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        const link = `${window.location.origin}/pool/${address}/pay/${idx}`;
+                                                        navigator.clipboard.writeText(link);
+                                                        alert('Payment link copied!');
+                                                    }}
+                                                    className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition"
+                                                >
+                                                    Copy Payment Link
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>

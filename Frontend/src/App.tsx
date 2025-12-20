@@ -12,6 +12,7 @@ import { CreatePool } from './pages/CreatePool';
 import { Dashboard } from './pages/Dashboard';
 
 import { PoolDetails } from './pages/PoolDetails';
+import PayRule from './pages/PayRule';
 
 // Removed placeholder Dashboard
 // Removed placeholder CreatePool
@@ -31,6 +32,7 @@ function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="create" element={<CreatePool />} />
                 <Route path="pool/:address" element={<PoolDetails />} />
+                <Route path="pool/:address/pay/:ruleId" element={<PayRule />} />
               </Route>
             </Routes>
           </BrowserRouter>
