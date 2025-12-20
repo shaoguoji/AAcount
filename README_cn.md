@@ -1,4 +1,6 @@
-# AAcount 去中心化透明的链上集体账本收付款与分配服务
+# Project intro
+
+AAcount 去中心化透明的链上集体账本收付款与分配服务
 
 ## 介绍
 
@@ -54,18 +56,22 @@ A、B、C 三个组织共同办一场技术沙龙活动，选出一名创建者�
 
 更多应用场景如产品众筹等有待探索。
 
-## 技术实现
+# Team info
+
+solo team: shaoguoji（jim/国际哥） —— a new bee in ETHChiangMai Bootcamp，
+
+# Tech details
 
 技术架构使用以太坊 EVM 智能合约保证资金池的透明性和安全性，同时确保交易规则由代码保证执行。所有数据使用链上存储，完全实现去中心化。
 
-### 技术栈
+## Tech stack
 
 采用前端+合约的架构。
 
 1. 以太坊 EVM 智能合约，使用 Solidity 编写 foundry 框架管理
 2. 前端使用 React + Vite 框架，使用 viem wagmi 和 rainbowkit 等库
 
-### 模块划分与页面设计
+## 模块划分与页面设计
 
 主页：AAcount landing page，展示 AAcount 的功能和使用方法，包括创建资金池、添加成员、添加交易规则等作为产品介绍。
 
@@ -77,6 +83,8 @@ pools：展示当前链上所有资金池，用户可以点击进入资金池详
 
 交易记录：对于资金池、规则，在其详情页显示与之相关的交易记录。
 
+# Github link
 
+https://github.com/shaoguoji/AAcount
 
 
