@@ -2,7 +2,7 @@
 
 AAcount: A Decentralized and Transparent On-Chain Collective Ledger for Payment and Distribution Services.
 
-DEMO: ![https://aacount.rubyfact74.workers.dev/](https://aacount.rubyfact74.workers.dev/)
+DEMO: [https://aacount.rubyfact74.workers.dev/](https://aacount.rubyfact74.workers.dev/)
 
 ## Introduction
 
